@@ -86,59 +86,57 @@ public class MachineOverlay {
         throw new UnsupportedOperationException("Hit shape could not be found :(");
     }
 
-    public static class Renderer implements WorldRenderEvents.BeforeBlockOutline {
+    public static class Renderer implements WorldRenderEvents.BlockOutline {
         @SuppressWarnings("ConstantConditions")
         @Override
-        public boolean beforeBlockOutline(WorldRenderContext wrc, HitResult hitResult) {
-            if (hitResult != null && hitResult.getType() == HitResult.Type.BLOCK) {
-                BlockHitResult blockHitResult = (BlockHitResult) hitResult;
-                BlockPos pos = blockHitResult.getBlockPos();
-                BlockState state = wrc.world().getBlockState(pos);
-                if (state.getBlock() instanceof MachineBlock && MinecraftClient.getInstance().player.getMainHandStack().getItem().isIn(ModernIndustrialization.OVERLAY_SOURCES)) {
-                    wrc.matrixStack().push();
-                    Vec3d cameraPos = MinecraftClient.getInstance().gameRenderer.getCamera().getPos();
-                    double x = pos.getX() - cameraPos.x;
-                    double y = pos.getY() - cameraPos.y;
-                    double z = pos.getZ() - cameraPos.z;
-                    wrc.matrixStack().translate(x, y, z);
+        public boolean onBlockOutline(WorldRenderContext wrc, WorldRenderContext.BlockOutlineContext boc) {
+            BlockHitResult blockHitResult = (BlockHitResult) MinecraftClient.getInstance().crosshairTarget;
+            BlockPos pos = boc.blockPos();
+            BlockState state = wrc.world().getBlockState(pos);
+            if (state.getBlock() instanceof MachineBlock && MinecraftClient.getInstance().player.getMainHandStack().getItem().isIn(ModernIndustrialization.OVERLAY_SOURCES)) {
+                wrc.matrixStack().push();
+                Vec3d cameraPos = MinecraftClient.getInstance().gameRenderer.getCamera().getPos();
+                double x = pos.getX() - cameraPos.x;
+                double y = pos.getY() - cameraPos.y;
+                double z = pos.getZ() - cameraPos.z;
+                wrc.matrixStack().translate(x, y, z);
 
-                    // Colored face overlay
-                    BlockPos blockPos = blockHitResult.getBlockPos();
-                    Vec3d posInBlock = blockHitResult.getPos().subtract(blockPos.getX(), blockPos.getY(), blockPos.getZ());
-                    Vec3d posOnFace = GeometryHelper.toFaceCoords(posInBlock, blockHitResult.getSide());
+                // Colored face overlay
+                BlockPos blockPos = blockHitResult.getBlockPos();
+                Vec3d posInBlock = blockHitResult.getPos().subtract(blockPos.getX(), blockPos.getY(), blockPos.getZ());
+                Vec3d posOnFace = GeometryHelper.toFaceCoords(posInBlock, blockHitResult.getSide());
 
-                    MeshBuilder meshBuilder = RendererAccess.INSTANCE.getRenderer().meshBuilder();
-                    QuadEmitter emitter;
-                    VertexConsumer vc = wrc.consumers().getBuffer(RenderLayer.getTranslucent());
-                    for (int i = 0; i < 3; ++i) {
-                        for (int j = 0; j < 3; ++j) {
-                            double minX = ZONES[i], maxX = ZONES[i + 1];
-                            double minY = ZONES[j], maxY = ZONES[j + 1];
-                            boolean insideQuad = minX <= posOnFace.x && posOnFace.x <= maxX && minY <= posOnFace.y && posOnFace.y <= maxY;
-                            emitter = meshBuilder.getEmitter();
-                            emitter.square(blockHitResult.getSide(), (float) minX, (float) minY, (float) maxX, (float) maxY, -0.0001f);
-                            float r = 0;
-                            float g = insideQuad ? 1 : 0;
-                            float b = insideQuad ? 0 : 1;
-                            vc.quad(wrc.matrixStack().peek(), emitter.toBakedQuad(0, null, false), r, g, b, 0x7fffffff, -2130706433);
-                        }
+                MeshBuilder meshBuilder = RendererAccess.INSTANCE.getRenderer().meshBuilder();
+                QuadEmitter emitter;
+                VertexConsumer vc = wrc.consumers().getBuffer(RenderLayer.getTranslucent());
+                for (int i = 0; i < 3; ++i) {
+                    for (int j = 0; j < 3; ++j) {
+                        double minX = ZONES[i], maxX = ZONES[i + 1];
+                        double minY = ZONES[j], maxY = ZONES[j + 1];
+                        boolean insideQuad = minX <= posOnFace.x && posOnFace.x <= maxX && minY <= posOnFace.y && posOnFace.y <= maxY;
+                        emitter = meshBuilder.getEmitter();
+                        emitter.square(blockHitResult.getSide(), (float) minX, (float) minY, (float) maxX, (float) maxY, -0.0001f);
+                        float r = 0;
+                        float g = insideQuad ? 1 : 0;
+                        float b = insideQuad ? 0 : 1;
+                        vc.quad(wrc.matrixStack().peek(), emitter.toBakedQuad(0, null, false), r, g, b, 0x7fffffff, -2130706433);
                     }
-
-                    // Extra lines
-                    VertexConsumer lines = wrc.consumers().getBuffer(RenderLayer.getLines());
-                    Matrix4f model = wrc.matrixStack().peek().getModel();
-                    Direction face = blockHitResult.getSide();
-                    vertex(model, lines, face, ZONES[1], ZONES[0]);
-                    vertex(model, lines, face, ZONES[1], ZONES[3]);
-                    vertex(model, lines, face, ZONES[2], ZONES[0]);
-                    vertex(model, lines, face, ZONES[2], ZONES[3]);
-                    vertex(model, lines, face, ZONES[0], ZONES[1]);
-                    vertex(model, lines, face, ZONES[3], ZONES[1]);
-                    vertex(model, lines, face, ZONES[0], ZONES[2]);
-                    vertex(model, lines, face, ZONES[3], ZONES[2]);
-
-                    wrc.matrixStack().pop();
                 }
+
+                // Extra lines
+                VertexConsumer lines = wrc.consumers().getBuffer(RenderLayer.getLines());
+                Matrix4f model = wrc.matrixStack().peek().getModel();
+                Direction face = blockHitResult.getSide();
+                vertex(model, lines, face, ZONES[1], ZONES[0]);
+                vertex(model, lines, face, ZONES[1], ZONES[3]);
+                vertex(model, lines, face, ZONES[2], ZONES[0]);
+                vertex(model, lines, face, ZONES[2], ZONES[3]);
+                vertex(model, lines, face, ZONES[0], ZONES[1]);
+                vertex(model, lines, face, ZONES[3], ZONES[1]);
+                vertex(model, lines, face, ZONES[0], ZONES[2]);
+                vertex(model, lines, face, ZONES[3], ZONES[2]);
+
+                wrc.matrixStack().pop();
             }
             return true;
         }

@@ -69,7 +69,7 @@ public class ModernIndustrializationClient implements ClientModInitializer {
         setupPackets();
         MITanks.setupClient();
         MachineModels.init();
-        WorldRenderEvents.BEFORE_BLOCK_OUTLINE.register(new MachineOverlay.Renderer());
+        WorldRenderEvents.BLOCK_OUTLINE.register(new MachineOverlay.Renderer());
         (new MIPipesClient()).onInitializeClient();
         ClientKeyHandler.setup();
         ClientTickEvents.START_CLIENT_TICK.register(JetpackParticleAdder::addJetpackParticles);
