@@ -27,6 +27,7 @@ import static aztech.modern_industrialization.ModernIndustrialization.METAL_MATE
 
 import aztech.modern_industrialization.MIBlock;
 import aztech.modern_industrialization.MIItem;
+import aztech.modern_industrialization.materials.MaterialBuilder;
 import aztech.modern_industrialization.materials.MaterialHelper;
 import aztech.modern_industrialization.textures.MITextures;
 import aztech.modern_industrialization.textures.TextureHelper;
@@ -103,7 +104,7 @@ public class RegularMaterialPart implements MaterialPart {
     }
 
     @Override
-    public void register() {
+    public void register(MaterialBuilder.RegisteringContext context) {
         // create item and block
         if (hasBlock) {
             block = new MIBlock(itemPath,
@@ -132,7 +133,7 @@ public class RegularMaterialPart implements MaterialPart {
                 }
             });
         } else if (part.equals(MIParts.HOT_INGOT)) {
-            MITextures.generateItemPartTexture(mtm, MIParts.INGOT, materialSet, itemPath, hasBlock, new HotIngotColoramp(coloramp, 0.1, 0.3));
+            MITextures.generateItemPartTexture(mtm, MIParts.INGOT, materialSet, itemPath, hasBlock, new HotIngotColoramp(coloramp, 0.1, 0.5));
         } else if (overlays.containsKey(part)) {
             Pair<String, String> overlay_part = overlays.get(part);
             MITextures.generateItemPartTexture(mtm, overlay_part.getRight(), overlay_part.getLeft(), materialSet, itemPath, hasBlock, coloramp);
